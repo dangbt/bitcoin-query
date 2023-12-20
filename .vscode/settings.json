@@ -1,0 +1,7 @@
+{
+  "editor.defaultFormatter": "../node_modules/prettier",
+  "editor.formatOnSave": true,
+  "editor.formatOnPaste": false,
+  "prettier.useEditorConfig": false,
+  "prettier.configPath": ".prettierrc"
+}
