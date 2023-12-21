@@ -47,7 +47,7 @@ class RPCController {
     try {
       const hash = req.params.hash
       if (hash) {
-        const data = await this.rpcService.getBlockStats(hash)
+        const data = await this.rpcService.getBlockStats(Number(hash))
         res.status(StatusCode.SUCCESS).json(
           handler.success({
             data: data,

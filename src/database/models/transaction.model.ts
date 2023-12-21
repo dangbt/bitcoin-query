@@ -49,7 +49,7 @@ export const initTransaction = (sequelize: Sequelize) => {
         allowNull: false,
       },
       time: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: false,
       },
       created_at: {

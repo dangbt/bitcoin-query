@@ -35,9 +35,9 @@ export class RPCService {
       throw Error(error as string)
     }
   }
-  getBlockStats = async (hash: string): Promise<BlockStats> => {
+  getBlockStats = async (height: number): Promise<BlockStats> => {
     try {
-      const dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getblockstats","params":["${hash}"]}`
+      const dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getblockstats","params":[${height}]}`
       const res = await instance.post<BlockStats>("/", dataString)
       return res.data
     } catch (error) {
@@ -53,7 +53,7 @@ export class RPCService {
     blockHash: string
   }): Promise<TransactionRaw> => {
     try {
-      const dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getrawtransaction","params":[${transactionHash}, 2, ${blockHash}]}`
+      const dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getrawtransaction","params":["${transactionHash}", 2, "${blockHash}"]}`
       const res = await instance.post<TransactionRaw>("/", dataString)
       return res.data
     } catch (error) {

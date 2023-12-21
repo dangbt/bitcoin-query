@@ -27,7 +27,7 @@ export default class CronJob {
   }
   start = async (height: number) => {
     try {
-      const res = await this.rpcService.getBlockStats(`${height}`)
+      const res = await this.rpcService.getBlockStats(height)
       const hash = res.blockhash
       const block = await this.rpcService.getBlock(hash)
       const tx = block.tx
