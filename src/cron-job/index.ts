@@ -28,16 +28,16 @@ export default class CronJob {
   start = async (height: number) => {
     try {
       const res = await this.rpcService.getBlockStats(height)
-      const hash = res.blockhash
+      const hash = res.result.blockhash
       const block = await this.rpcService.getBlock(hash)
-      const tx = block.tx
+      const tx = block.result.tx
       if (tx.length) {
         tx.map(async (t, i) => {
           const transaction = await this.rpcService.getRawTransaction({
             transactionHash: t,
             blockHash: hash,
           })
-          const vout = transaction.vout
+          const vout = transaction.result.vout
           // this transaction is for miner, who is an owner block, dont have from address
           if (i === 0) {
             vout.forEach(async (out) => {
@@ -46,7 +46,7 @@ export default class CronJob {
                   from: "0",
                   to: out.scriptPubKey.address,
                   value: out.value,
-                  time: transaction.time,
+                  time: transaction.result.time,
                   symbol_id: this.symbol.id,
                 }
                 const trans =
@@ -56,10 +56,10 @@ export default class CronJob {
           } else {
             vout.map(async (out) => {
               const data: TransactionCreationAttributes = {
-                from: transaction.vin[0].prevout.scriptPubKey.address,
+                from: transaction.result.vin[0].prevout.scriptPubKey.address,
                 to: out.scriptPubKey.address,
                 value: out.value,
-                time: transaction.time,
+                time: transaction.result.time,
                 symbol_id: this.symbol.id,
               }
               const trans =

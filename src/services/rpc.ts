@@ -1,16 +1,16 @@
 import instance from "../axios/axios"
-import type { Block, BlockStats } from "../types"
-import dotenv from "dotenv"
+import type { Block, BlockStats, ResponseRPC } from "../types"
 import { TransactionRaw } from "../types/transacton"
 
-dotenv.config()
-
-const USER = process.env.RPC_USER
-const PASS = process.env.RPC_PASSWORD
-
 export class RPCService {
-  url
+  url: string
   constructor(url: string) {
+    if (!url) {
+      throw Error(
+        "URL required, it is look like http://${USER}:${PASS}@127.0.0.1:8332/",
+      )
+    }
+
     this.url = url
     instance.defaults.baseURL = url
     instance.defaults.headers.common["Content-Type"] = "text/plain"
@@ -26,19 +26,19 @@ export class RPCService {
     }
   }
 
-  getBlock = async (hash: string): Promise<Block> => {
+  getBlock = async (hash: string): Promise<ResponseRPC<Block>> => {
     try {
       const dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getblock","params":["${hash}"]}`
-      const res = await instance.post<Block>("/", dataString)
+      const res = await instance.post<ResponseRPC<Block>>("/", dataString)
       return res.data
     } catch (error) {
       throw Error(error as string)
     }
   }
-  getBlockStats = async (height: number): Promise<BlockStats> => {
+  getBlockStats = async (height: number): Promise<ResponseRPC<BlockStats>> => {
     try {
       const dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getblockstats","params":[${height}]}`
-      const res = await instance.post<BlockStats>("/", dataString)
+      const res = await instance.post<ResponseRPC<BlockStats>>("/", dataString)
       return res.data
     } catch (error) {
       throw Error(error as string)
@@ -51,15 +51,19 @@ export class RPCService {
   }: {
     transactionHash: string
     blockHash: string
-  }): Promise<TransactionRaw> => {
+  }): Promise<ResponseRPC<TransactionRaw>> => {
     try {
       const dataString = `{"jsonrpc":"1.0","id":"curltext","method":"getrawtransaction","params":["${transactionHash}", 2, "${blockHash}"]}`
-      const res = await instance.post<TransactionRaw>("/", dataString)
+      const res = await instance.post<ResponseRPC<TransactionRaw>>(
+        "/",
+        dataString,
+      )
       return res.data
     } catch (error) {
       throw Error(error as string)
     }
   }
+
   // getBestBlockHash = () => {}
   // getConnectionCount = () => {}
   // getDifficulty = () => {}
@@ -69,5 +73,4 @@ export class RPCService {
   // getRawMemPool = () => {}
 }
 
-const rpcService = new RPCService(`http://${USER}:${PASS}@127.0.0.1:8332/`)
-export default rpcService
+export default RPCService

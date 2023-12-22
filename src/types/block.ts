@@ -62,3 +62,7 @@ export interface BlockStats {
   utxo_increase_actual: number // (numeric, optional) The increase/decrease in the number of unspent outputs, not counting unspendables
   utxo_size_inc_actual: number // (numeric, optional) The increase/decrease in size for the utxo index, not counting unspendables
 } //
+
+export interface ResponseRPC<T> {
+  result: T
+}

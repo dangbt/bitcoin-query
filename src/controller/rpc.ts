@@ -1,9 +1,15 @@
 import type { Request, Response } from "express"
-import rpcService from "../services/rpc"
+import RPCService from "../services/rpc"
 import symbolService from "../services/symbol"
-import type { RPCService } from "../services/rpc"
 import type { SymbolService } from "../services/symbol"
 import handler, { StatusCode } from "../utils/handler"
+import dotenv from "dotenv"
+
+dotenv.config()
+
+const USER = process.env.RPC_USER
+const PASS = process.env.RPC_PASSWORD
+const rpcService = new RPCService(`http://${USER}:${PASS}@127.0.0.1:8332/`)
 
 class RPCController {
   rpcService
