@@ -1,6 +1,6 @@
-import express from "express"
+import express, { Router } from "express"
 import rpcController from "../controller/rpc"
-const router = express.Router()
+const router: Router = express.Router()
 
 router.get("/getblockcount", rpcController.getBlockCount)
 router.get("/getblockhash/:hash", rpcController.getBlock)
