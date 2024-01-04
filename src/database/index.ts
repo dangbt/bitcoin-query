@@ -6,17 +6,21 @@ import symbolService from "../services/symbol"
 import transactionService from "../services/transaction"
 
 import dotenv from "dotenv"
+import addressService from "../services/address"
 
 dotenv.config()
 
 const USER = process.env.RPC_USER
 const PASS = process.env.RPC_PASSWORD
+const ENABLE_LOGGING = process.env.ENABLE_LOGGING
 const rpcService = new RPCService(`http://${USER}:${PASS}@127.0.0.1:8332/`)
 
 class Database {
   sequelize: Sequelize
   connect = (connectString: string) => {
-    this.sequelize = new Sequelize(connectString)
+    this.sequelize = new Sequelize(connectString, {
+      logging: Boolean(ENABLE_LOGGING),
+    })
   }
   testConntect = async () => {
     try {
@@ -36,8 +40,15 @@ class Database {
         rpcService,
         transactionService,
         symbolService,
+        addressService,
         "BTC",
       )
+      cronjobBTC.start(824262)
+      // cronjobBTC.addressModelSync(
+      //   "bc1qde7evsyetmtn4eca73j62td0mgxkqfhuwq95lh",
+      //   "bc1p4h0ltw9aqwveg6x9l5l5yj0yw9856h93pu5fysf59jgut3gd6n6qcgh8vd",
+      //   0.03742458,
+      // )
     } catch (error) {
       console.error("Unable to SyncData  the database:", error)
     }

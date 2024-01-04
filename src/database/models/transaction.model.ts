@@ -16,6 +16,8 @@ class Transaction extends Model<
   TransactionCreationAttributes
 > {
   declare id: number
+  declare tx: string
+  declare blockhash: string
   declare from: string
   declare to: string
   declare value: number
@@ -36,6 +38,15 @@ export const initTransaction = (sequelize: Sequelize) => {
       symbol_id: {
         type: DataTypes.INTEGER,
       },
+      blockhash: {
+        type: DataTypes.STRING, // hex
+        allowNull: false,
+      },
+      tx: {
+        type: DataTypes.STRING, // hex
+        allowNull: false,
+        unique: true,
+      },
       from: {
         type: DataTypes.STRING, // hex
         allowNull: false,
@@ -45,11 +56,11 @@ export const initTransaction = (sequelize: Sequelize) => {
         allowNull: false,
       },
       value: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.FLOAT,
         allowNull: false,
       },
       time: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         allowNull: false,
       },
       created_at: {
