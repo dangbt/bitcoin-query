@@ -3,7 +3,7 @@ import Symbol, {
 } from "../database/models/symbol.model"
 
 export class SymbolService {
-  findSymbol = async (symbol: Omit<SymbolCreationAttributes, "tick_price">) => {
+  findByName = async (symbol: Omit<SymbolCreationAttributes, "tick_price">) => {
     try {
       const res = await Symbol.findOne({
         where: { name: symbol.name },
@@ -11,7 +11,7 @@ export class SymbolService {
       return res
     } catch (error) {}
   }
-  createSymbol = async (symbol: SymbolCreationAttributes) => {
+  create = async (symbol: SymbolCreationAttributes) => {
     try {
       const res = await Symbol.create(symbol)
       return res

@@ -3,7 +3,7 @@ import Transaction, {
 } from "../database/models/transaction.model"
 
 export class TransactionService {
-  findTransactionByTx = async (tx: TransactionCreationAttributes["tx"]) => {
+  findByTx = async (tx: TransactionCreationAttributes["tx"]) => {
     try {
       const res = await Transaction.findOne({
         where: { tx: tx },
@@ -11,7 +11,7 @@ export class TransactionService {
       return res
     } catch (error) {}
   }
-  createTransaction = async (transaction: TransactionCreationAttributes) => {
+  create = async (transaction: TransactionCreationAttributes) => {
     try {
       const res = await Transaction.create(transaction)
       return res
