@@ -21,6 +21,7 @@ class Transaction extends Model<
   declare from: string
   declare to: string
   declare value: number
+  declare fee: number
   declare time: number
   declare symbol_id: number
   declare created_at: Date
@@ -56,6 +57,10 @@ export const initTransaction = (sequelize: Sequelize) => {
         allowNull: false,
       },
       value: {
+        type: DataTypes.FLOAT,
+        allowNull: false,
+      },
+      fee: {
         type: DataTypes.FLOAT,
         allowNull: false,
       },

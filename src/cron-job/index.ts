@@ -56,71 +56,95 @@ export default class CronJob {
     } catch (error) {}
   }
 
-  addressModelSync = async (
-    addressFrom: Address["address"],
-    addressTo: Address["address"],
+  reduceValueToAddress = async (
+    address: Address["address"],
+    value: Address["value"],
+  ) => {
+    try {
+      const addressOld = await this.addressService.findByAddress(address)
+      let addressNew
+
+      if (addressOld) {
+        addressNew = addressOld.dataValues
+      } else {
+        const newAddressRecord = {
+          ...this.defaultAddressRecord,
+          address: address,
+        }
+
+        const newAddress = await this.addressService.create(newAddressRecord)
+
+        if (newAddress) {
+          addressNew = newAddress.dataValues
+        }
+      }
+
+      if (addressNew) {
+        addressNew.value = addressNew.value - Math.abs(value)
+        this.addressService.update(addressNew)
+      }
+    } catch (error) {}
+  }
+  addValueToAddress = async (
+    address: Address["address"],
     value: Address["value"],
     time: Transaction["time"],
   ) => {
     try {
-      // avg price for addressTo
-      // reduce value for addressFrom
-      let addressFromNew
-      let addressToNew
-
-      const [addressFromOld, addressToOld, price] = await Promise.all([
-        this.addressService.findByAddress(addressFrom),
-        this.addressService.findByAddress(addressTo),
+      const [addressOld, price] = await Promise.all([
+        this.addressService.findByAddress(address),
         this.getPriceByTime(time),
       ])
+
       let currentPriceOnPlatform = 0
       if (price) {
         currentPriceOnPlatform =
           (price.dataValues.high + price.dataValues.low) / 2
       }
+      let addressNew
 
-      if (addressFromOld) {
-        addressFromNew = addressFromOld.dataValues
+      if (addressOld) {
+        addressNew = addressOld.dataValues
       } else {
         const newAddressRecord = {
           ...this.defaultAddressRecord,
-          address: addressFrom,
+          address: address,
         }
 
         const newAddress = await this.addressService.create(newAddressRecord)
 
         if (newAddress) {
-          addressFromNew = newAddress.dataValues
+          addressNew = newAddress.dataValues
         }
       }
 
-      if (addressFromNew) {
-        addressFromNew.value = addressFromNew.value - Math.abs(value)
-        this.addressService.update(addressFromNew)
-      }
-
-      if (addressToOld) {
-        addressToNew = addressToOld.dataValues
-      } else {
-        const newAddressRecord = {
-          ...this.defaultAddressRecord,
-          address: addressTo,
-        }
-        const newAddress = await this.addressService.create(newAddressRecord)
-        if (newAddress) {
-          addressToNew = newAddress.dataValues
-        }
-      }
-      if (addressToNew) {
-        addressToNew.avg_price =
-          (Math.abs(addressToNew.value) * addressToNew.avg_price +
+      if (addressNew) {
+        addressNew.avg_price =
+          (Math.abs(addressNew.value) * addressNew.avg_price +
             Math.abs(value) * currentPriceOnPlatform) /
-          (Math.abs(addressToNew.value) + Math.abs(value))
+          (Math.abs(addressNew.value) + Math.abs(value))
+        addressNew.value = addressNew.value + value
 
-        addressToNew.value = addressToNew.value + value
-
-        this.addressService.update(addressToNew)
+        this.addressService.update(addressNew)
       }
+    } catch (error) {}
+  }
+
+  addressModelSync = async (
+    addressFrom: Address["address"][],
+    addressTo: Address["address"][],
+    valueOfAdress: { [key: Address["address"]]: Address["value"] },
+    time: Transaction["time"],
+  ) => {
+    try {
+      addressFrom.forEach((address) => {
+        const value = valueOfAdress[address]
+        this.reduceValueToAddress(address, value)
+      })
+      addressTo.forEach((address) => {
+        const value = valueOfAdress[address]
+        this.addValueToAddress(address, value, time)
+      })
       return true
     } catch (error) {}
   }
@@ -143,57 +167,82 @@ export default class CronJob {
                 transactionHash: t,
                 blockHash: blockhash,
               })
-              if (
-                t ===
-                "c4144dfef4f12559fce5aa7e37da365d1b5da0672a176f8ee7c3413e51433fc1"
-              ) {
-                console.log(transaction.result.vout)
-              }
+
               const vout = transaction.result.vout
+              const vin = transaction.result.vin
               // this transaction is for miner, who is an owner block, dont have from address
               if (i === 0) {
+                let toAdresss = []
+                let value = 0
+                let valueOfAdress: {
+                  [key: Address["address"]]: Address["value"]
+                } = {}
+
+                for (let i = 0; i < vin.length; i++) {
+                  const vinItem = vin[i]
+                }
+
                 for (let i = 0; i < vout.length; i++) {
                   const out = vout[i]
-                  if (out.scriptPubKey.address) {
-                    const data: TransactionCreationAttributes = {
-                      from: "0",
-                      blockhash: blockhash,
-                      tx: t,
-                      to: out.scriptPubKey.address,
-                      value: out.value,
-                      time: transaction.result.time,
-                      symbol_id: this.symbol.id,
-                    }
-                    await this.transactionService.create(data)
-                    await this.addressModelSync(
-                      data.from,
-                      data.to,
-                      data.value,
-                      transaction.result.time,
-                    )
-                  }
+                  toAdresss.push(out.scriptPubKey.address)
+                  value += out.value
+                  valueOfAdress[out.scriptPubKey.address] = out.value
                 }
+                valueOfAdress["0"] = value
+
+                const data: TransactionCreationAttributes = {
+                  from: "0",
+                  blockhash: blockhash,
+                  tx: t,
+                  to: JSON.stringify(toAdresss),
+                  fee: transaction.result.fee,
+                  value: value, // total value of the transaction without fee
+                  time: transaction.result.time,
+                  symbol_id: this.symbol.id,
+                }
+                await this.transactionService.create(data)
+                await this.addressModelSync(
+                  [data.from],
+                  JSON.parse(data.to),
+                  valueOfAdress,
+                  transaction.result.time,
+                )
               } else {
+                let fromAdresss = []
+                let toAdresss = []
+                let value = 0
+                let valueOfAdress: {
+                  [key: Address["address"]]: Address["value"]
+                } = {}
+                for (let i = 0; i < vin.length; i++) {
+                  const vinItem = vin[i]
+                  fromAdresss.push(vinItem.prevout.scriptPubKey.address)
+                  valueOfAdress[vinItem.prevout.scriptPubKey.address] =
+                    vinItem.prevout.value
+                }
                 for (let i = 0; i < vout.length; i++) {
                   const out = vout[i]
-                  const data: TransactionCreationAttributes = {
-                    blockhash: blockhash,
-                    tx: t,
-                    from: transaction.result.vin[0].prevout.scriptPubKey
-                      .address,
-                    to: out.scriptPubKey.address,
-                    value: out.value,
-                    time: transaction.result.time,
-                    symbol_id: this.symbol.id,
-                  }
-                  await this.transactionService.create(data)
-                  await this.addressModelSync(
-                    data.from,
-                    data.to,
-                    data.value,
-                    transaction.result.time,
-                  )
+                  toAdresss.push(out.scriptPubKey.address)
+                  value += out.value
+                  valueOfAdress[out.scriptPubKey.address] = out.value
                 }
+                const data: TransactionCreationAttributes = {
+                  blockhash: blockhash,
+                  tx: t,
+                  from: JSON.stringify(fromAdresss),
+                  to: JSON.stringify(toAdresss),
+                  fee: transaction.result.fee,
+                  value: value,
+                  time: transaction.result.time,
+                  symbol_id: this.symbol.id,
+                }
+                await this.transactionService.create(data)
+                await this.addressModelSync(
+                  JSON.parse(data.from),
+                  JSON.parse(data.to),
+                  valueOfAdress,
+                  transaction.result.time,
+                )
               }
             }
           }

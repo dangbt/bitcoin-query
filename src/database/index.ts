@@ -74,7 +74,7 @@ class Database {
         historyPriceService,
         "BTC",
       )
-      cronjobBTC.start(824262)
+      cronjobBTC.start(824811)
       // // cronjobBTC.addressModelSync(
       // //   "bc1qde7evsyetmtn4eca73j62td0mgxkqfhuwq95lh",
       // //   "bc1p4h0ltw9aqwveg6x9l5l5yj0yw9856h93pu5fysf59jgut3gd6n6qcgh8vd",
